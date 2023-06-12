@@ -1,0 +1,8 @@
+pyyaml
+cryptography<3.4; python_version < '3.8' # bionic workaround
+cryptography; python_version >= '3.8'
+# https://github.com/juju-solutions/layer-basic/issues/210
+Jinja2<3.0
+MarkupSafe<2.1.0
+# support for bionic
+ops >= 1.5.0,< 2.0.0

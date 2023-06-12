@@ -1,0 +1,36 @@
+options:
+  source-unix-group:
+    description: |
+      The UNIX group that will be used to source the list of users to be added to the juju model.
+    default: ubuntu
+    type: string
+  ignored-accounts:
+    description: |
+      A comma separated list of Juju accounts that will be ignored by the charm.
+    default: admin
+    type: string
+  juju-admin-unix-account:
+    description: |
+      The UNIX account that will be used to add users to the juju model.
+    default: ubuntu
+    type: string
+  sync-schedule:
+    description: |
+      User account sync schedule in cron format.
+      Examples: "10,25,40,55 * * * *", "@daily", "@hourly"
+    default: "@daily"
+    type: string
+  site-name:
+    description:
+      This is the name that will be used to identify the remote site in the bash prompt.
+      It can be useful to set this to the name of the cloud or datacenter location.
+    default: "Juju"
+    type: string
+  default-juju-model:
+    description: |
+      The Juju model that will be used as the default model when accessing juju for the first time.
+      If empty, the first available controller and model will be selected.
+      Format: "<controller-name>:<bootstrap-user>/<model-name>".
+      Example: "foundations-maas:admin/openstack"
+    default: ""
+    type: string

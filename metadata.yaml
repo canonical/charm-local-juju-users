@@ -1,0 +1,17 @@
+name: local-juju-users
+display-name: Local Juju Users
+summary: A subordinate charm for syncing Juju accounts and local UNIX group users.
+description: |
+  A subordinate charm for syncing Juju accounts and local UNIX group users.
+
+  Charm lists local UNIX group users and creates Juju accounts for them, gives them
+  admin access to all locally available controllers and models, sets up SSH keys
+  and adds them to all models.
+subordinate: true
+requires:
+  general-info:
+    interface: juju-info
+    scope: container
+peers:
+  local-juju-users:
+    interface: local_juju_users_peers

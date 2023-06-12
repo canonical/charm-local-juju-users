@@ -1,0 +1,25 @@
+# This section is managed by Juju. Do not edit.
+
+# Add site designator to bash prompt
+SITENAME={{ sitename }}
+
+# Auto-load the OpenStack credentials
+if [ -f ~/admin.novarc ] ; then
+  source ~/admin.novarc
+  echo "Sourced admin.novarc"
+fi
+
+# Auto-switch to the default model (cloud-dependent)
+if [ -f {{ default_model_filename }} ] ; then
+  source {{ default_model_filename }}
+  echo "Sourced {{ default_model_filename }}"
+fi
+
+# Configure the prompt
+[ "x$JUJU_MODEL" == 'x' ] && export JUJU_MODEL="$(juju switch)"
+if echo $PS1|grep -qv $SITENAME; then
+    PS1="$SITENAME MODEL(\$(echo \$JUJU_MODEL)) $PS1"
+fi
+
+# allow Juju and k8s to work inside the snap
+export JUJU_DATA=/home/{{ user }}/.local/share/juju

@@ -1,0 +1,13 @@
+controllers:
+  {%- for name, controller in controllers.items() %}
+  {{ name }}:
+    uuid: {{ controller["uuid"] }}
+    api-endpoints: {{ controller["api-endpoints"] }}
+    ca-cert: |
+      {{
+        controller["ca-cert"] | indent(width=6)
+      }}
+    cloud: {{ controller.cloud }}
+    region: {{ controller.region }}
+  {%- endfor %}
+current-controller: {{ current_controller }}

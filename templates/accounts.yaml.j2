@@ -1,0 +1,6 @@
+controllers:
+  {% for controller_name, controller in controllers.items() -%}
+  {{ controller_name }}:
+    user: {{ user }}
+    password: {{ password }}
+  {% endfor %}
