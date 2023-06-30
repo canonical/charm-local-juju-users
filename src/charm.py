@@ -342,17 +342,20 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
     def _sync_extra_paths(self, user):
         """Sync extra paths from the config."""
         extra_paths = self.model.config["sync-extra-paths"]
+        if not extra_paths:
+            return
+
         try:
             paths = yaml.safe_load(extra_paths)
         except Exception as e:
             log.error("Failed to parse sync-extra-paths: {}".format(e))
-            paths = []
+            return
 
         for path in paths:
-            src, dst = path.split(":")
-            # rewrite $USER in the dst path
-            dst = dst.replace("$USER", user)
             try:
+                src, dst = path.split(":")
+                # rewrite $USER in the dst path
+                dst = dst.replace("$USER", user)
                 sync_path(src, dst, user)
             except Exception as e:
                 log.warning("Skipping files sync {}. Failed to sync: {}".format(path, e))
