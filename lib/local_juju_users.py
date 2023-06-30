@@ -293,7 +293,19 @@ def parse_controller_model(controller_model):
         return "", ""
 
 
-### juju accounts
+def recursive_chown(target, user):
+    """Recursively chown a directory."""
+    for dir, _, filenames in os.walk(target):
+        shutil.chown(dir, user, get_users_primary_group(user))
+        for filename in filenames:
+            shutil.chown(os.path.join(dir, filename), user, get_users_primary_group(user))
+
+
+def sync_path(source, destination, user):
+    """Sync files from source to destination."""
+    cmd = ["rsync", "-avz", source, destination]
+    subprocess.check_call(cmd)
+    recursive_chown(destination, user)
 
 
 class JujuClient:
