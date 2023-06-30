@@ -265,9 +265,10 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
         # on the leader load admin's clouds.yaml and credentials.yaml files so that they can be distributed to other users
         if self.unit.is_leader():
             credentials = read_credentials_file(self.model.config["juju-admin-unix-account"])
-            clouds = read_clouds_file(self.model.config["juju-admin-unix-account"])
             if self._get_peer_data("credentials") != credentials:
                 self._set_peer_data("credentials", credentials)
+
+            clouds = read_clouds_file(self.model.config["juju-admin-unix-account"])
             if self._get_peer_data("clouds") != clouds:
                 self._set_peer_data("clouds", clouds)
 
