@@ -201,13 +201,21 @@ def save_base64_to_file(base64_string, file_path):
 def read_clouds_file(user):
     """Return the clouds.yaml as base64 encoded string."""
     clouds_file = "/home/{}/.local/share/juju/clouds.yaml".format(user)
-    return encode_file_to_base64(clouds_file)
+    try:
+        return encode_file_to_base64(clouds_file)
+    except FileNotFoundError:
+        # return dummy empty clouds in the expected format
+        return base64.b64encode(b"clouds: {}")
 
 
 def read_credentials_file(user):
     """Return the clouds.yaml as base64 encoded string."""
     credentials_file = "/home/{}/.local/share/juju/credentials.yaml".format(user)
-    return encode_file_to_base64(credentials_file)
+    try:
+        return encode_file_to_base64(credentials_file)
+    except FileNotFoundError:
+        # return dummy empty credentials in the expected format
+        return base64.b64encode(b"credentials: {}")
 
 
 def save_clouds_file(user, clouds):
