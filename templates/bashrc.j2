@@ -1,7 +1,7 @@
 # This section is managed by Juju. Do not edit.
 
 # Add site designator to bash prompt
-SITENAME={{ sitename }}
+SITENAME="{{ sitename }}"
 
 # Auto-load the OpenStack credentials
 if [ -f ~/admin.novarc ] ; then
@@ -17,7 +17,7 @@ fi
 
 # Configure the prompt
 [ "x$JUJU_MODEL" == 'x' ] && export JUJU_MODEL="$(juju switch)"
-if echo $PS1|grep -qv $SITENAME; then
+if echo $PS1|grep -qv "$SITENAME"; then
     PS1="$SITENAME MODEL(\$(echo \$JUJU_MODEL)) $PS1"
 fi
 
