@@ -16,10 +16,13 @@
 
 import json
 import logging
+import os
+import subprocess
 from datetime import datetime
 from typing import Any
 
 import ops
+import yaml
 from local_juju_users import (
     ConfigRenderer,
     JujuClient,
@@ -39,6 +42,7 @@ from local_juju_users import (
     setup_ssh_config,
     setup_ssh_key,
     su,
+    sync_path,
 )
 from ops.main import main
 from pkg_resources import packaging
@@ -57,6 +61,8 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
+        self.framework.observe(self.on.install, self._on_install)
+        self.framework.observe(self.on.upgrade_charm, self._on_install)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_data_changed)
@@ -69,6 +75,16 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
 
         # FIXME: validate this user account
         self.juju_client = JujuClient(self.model.config["juju-admin-unix-account"])
+
+    def _on_install(self, _):
+        """Install the required packages."""
+        os.environ["DEBIAN_FRONTEND"] = "noninteractive"
+
+        cmd = ["apt-get", "update"]
+        subprocess.check_call(cmd, universal_newlines=True)
+
+        cmd = ["apt-get", "install", "-y", "rsync"]
+        subprocess.check_call(cmd, universal_newlines=True)
 
     def _assess_status(self):
         """Assess the status of this unit."""
@@ -322,6 +338,24 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
             model_filename = "/home/{}/model.{}".format(user, model.split("/")[-1])
         return model_filename
 
+    def _sync_extra_paths(self, user):
+        """Sync extra paths from the config."""
+        extra_paths = self.model.config["sync-extra-paths"]
+        try:
+            paths = yaml.safe_load(extra_paths)
+        except Exception as e:
+            log.error("Failed to parse sync-extra-paths: {}".format(e))
+            paths = []
+
+        for path in paths:
+            src, dst = path.split(":")
+            # rewrite $USER in the dst path
+            dst = dst.replace("$USER", user)
+            try:
+                sync_path(src, dst, user)
+            except Exception as e:
+                log.warning("Skipping files sync {}. Failed to sync: {}".format(path, e))
+
     def _synchronize_accounts(self, event: ops.charm.ActionEvent):
         source_unix_group = self.model.config["source-unix-group"]
         self.model.config["ignored-accounts"]
@@ -433,6 +467,9 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
                 sitename,
                 self._generate_model_filename(default_controller, default_model, user),
             )
+
+            # sync any additional files
+            self._sync_extra_paths(user)
 
         # finally, disable accounts that are no longer needed
         if self.unit.is_leader():

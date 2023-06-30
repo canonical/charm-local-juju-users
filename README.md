@@ -29,6 +29,7 @@ Available configuration options:
 | `sync-schedule` | User account sync schedule in cron format. | `"10,25,40,55 * * * *"` `"@daily"` `"@hourly"` | `"@daily"` |
 | `site-name` | This is the name that will be used to identify the remote site in the bash prompt. It can be useful to set this to the name of the cloud or datacenter location. | `Example-West-1` | `Juju` |
 | `default-juju-model` | The Juju model that will be used as the default model when accessing juju for the first time. If empty, the first available controller and model will be selected. | `"foundations-maas:admin/openstack"` | `""` |
+| `sync-extra-paths` | A list of paths to files and directories to be synced between "juju-admin-unix-account" and "source-unix-group" members. The expected format is a YaML list of `<source>:<destination>` strings. The underlying tool used for syncing these files is `rsync`.  | `["/home/ubuntu/admin.novarc:/home/$USER/admin.novarc", "/home/ubuntu/.kube/:/home/$USER/.kube"]` | `""` |
 
 ## Usage
 

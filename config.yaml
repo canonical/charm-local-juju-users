@@ -34,3 +34,12 @@ options:
       Example: "foundations-maas:admin/openstack"
     default: ""
     type: string
+  sync-extra-paths:
+    description: |
+      A list of paths to files and directories to be synced between "juju-admin-unix-account" and "source-unix-group" members.
+      The expected format is a YaML list of "<source>:<destination>" strings.
+      Example:
+      - /home/ubuntu/admin.novarc:/home/$USER/admin.novarc
+      - /home/ubuntu/.kube/:/home/$USER/.kube
+    default: ""
+    type: string
