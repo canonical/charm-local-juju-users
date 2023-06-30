@@ -313,7 +313,10 @@ def sync_path(source, destination, user):
     """Sync files from source to destination."""
     cmd = ["rsync", "-avz", source, destination]
     subprocess.check_call(cmd)
-    recursive_chown(destination, user)
+    if os.path.isdir(destination):
+        recursive_chown(destination, user)
+    else:
+        shutil.chown(destination, user, get_users_primary_group(user))
 
 
 class JujuClient:
