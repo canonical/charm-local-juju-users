@@ -205,7 +205,7 @@ def read_clouds_file(user):
         return encode_file_to_base64(clouds_file)
     except FileNotFoundError:
         # return dummy empty clouds in the expected format
-        return base64.b64encode(b"clouds: {}")
+        return base64.b64encode(b"clouds: {}").decode("utf-8")
 
 
 def read_credentials_file(user):
@@ -215,7 +215,7 @@ def read_credentials_file(user):
         return encode_file_to_base64(credentials_file)
     except FileNotFoundError:
         # return dummy empty credentials in the expected format
-        return base64.b64encode(b"credentials: {}")
+        return base64.b64encode(b"credentials: {}").decode("utf-8")
 
 
 def save_clouds_file(user, clouds):
