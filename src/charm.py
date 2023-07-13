@@ -450,7 +450,9 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
             for controller in self.juju_client.controllers:
                 controller_models = self.juju_client.models(controller)
                 for model in controller_models:
-                    self.juju_client.register_ssh_key(controller, model["name"], user)
+                    # registering ssh keys is supported only in non-container models
+                    if model["model-type"] != "caas":
+                        self.juju_client.register_ssh_key(controller, model["name"], user)
 
                     self.renderer.render(
                         "model.j2",
