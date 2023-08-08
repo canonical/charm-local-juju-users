@@ -282,8 +282,10 @@ def customize_bashrc(user, sitename, default_model_filename):
     source_line = "if [ -f ~/.bashrc_local_juju_users ]; then source ~/.bashrc_local_juju_users; fi # local-juju-users-bashrc"
     regex_pattern = r"local-juju-users-bashrc"
     file_path = "/home/{}/.bashrc".format(user)
-    with open(file_path, "r") as file:
-        file_contents = file.readlines()
+    file_contents = []
+    if os.path.isfile(file_path):
+        with open(file_path, "r") as file:
+            file_contents = file.readlines()
     pattern_matched = any(re.search(regex_pattern, line) for line in file_contents)
     if not pattern_matched:
         file_contents.append(source_line + "\n")
