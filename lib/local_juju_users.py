@@ -309,8 +309,21 @@ def recursive_chown(target, user):
             shutil.chown(os.path.join(dir, filename), user, get_users_primary_group(user))
 
 
+def create_dirs(target, user):
+    """Create parent directories at the target location, if necessary."""
+    target_dir = os.path.dirname(target)
+    first_existing_dir = target_dir
+    while not os.path.isdir(first_existing_dir):
+        first_existing_dir = os.path.split(first_existing_dir)[0]
+    # only create directories if necessary
+    if first_existing_dir != target_dir:
+        os.makedirs(target_dir)
+        recursive_chown(first_existing_dir, user)
+
+
 def sync_path(source, destination, user):
     """Sync files from source to destination."""
+    create_dirs(destination, user)
     cmd = ["rsync", "-avz", source, destination]
     subprocess.check_call(cmd)
     if os.path.isdir(destination):
