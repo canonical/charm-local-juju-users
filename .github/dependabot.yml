@@ -1,5 +1,19 @@
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    assignees: ["przemeklal"]
+    reviewers: ["przemeklal"]
+    open-pull-requests-limit: 2
+    commit-message:
+      # Skip CI when updating, well, CI.
+      # See: https://github.blog/changelog/2021-02-08-github-actions-skip-pull-request-and-push-workflows-with-skip-ci/
+      prefix: '[skip ci] '
+    schedule:
+      day: "monday"
+      timezone: "10:00 CEST"
+      interval: "weekly"
+
   - package-ecosystem: "pip"
     directory: "/"
     assignees: ["przemeklal"]
