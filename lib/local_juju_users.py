@@ -29,7 +29,7 @@ import subprocess
 import yaml
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import rsa, dsa, ec, ed25519
 from jinja2 import Environment, FileSystemLoader
 from pkg_resources import packaging
 
@@ -135,11 +135,11 @@ def setup_juju_data_dir(user):
     set_owner_and_permissions(juju_dir, user, primary_group, 0o700)
 
 
-def setup_ssh_key(user):
+def setup_ssh_key(user, key_type="ed25519"):
     """Set up an SSH key for a user."""
     ssh_dir_path = "/home/{}/.ssh".format(user)
-    private_key_path = "{}/personal_juju_id_ecdsa".format(ssh_dir_path)
-    public_key_path = "{}/personal_juju_id_ecdsa.pub".format(ssh_dir_path)
+    private_key_path = "{}/personal_juju_id_{}".format(ssh_dir_path, key_type)
+    public_key_path = "{}/personal_juju_id_{}.pub".format(ssh_dir_path, key_type)
 
     keypair_exists = os.path.isfile(private_key_path) and os.path.isfile(public_key_path)
 
@@ -160,11 +160,12 @@ def setup_ssh_key(user):
     set_owner_and_permissions(public_key_path, user, primary_group, 0o644)
 
 
-def get_ssh_key(user):
+def get_ssh_key(user, key_type="ed25519"):
     """Return the SSH key for a user."""
     # TOFIX: home dir location?
     # TOFIX: make sure the key exists
-    public_key_path = "/home/{}/.ssh/personal_juju_id_ecdsa.pub".format(user)
+    public_key_path = ("/home/{}/.ssh/personal_juju_id_{}.pub"
+                       .format(user, key_type))
     with open(public_key_path, "r") as f:
         public_key = f.read()
     return public_key
@@ -232,12 +233,56 @@ def save_credentials_file(user, credentials):
     set_owner_and_permissions(credentials_file, user, get_users_primary_group(user), 0o600)
 
 
-def generate_ssh_key_pair(user):
-    """Generate an ECDSA SSH key pair."""
-    private_key = ec.generate_private_key(
-        ec.SECP256R1(), default_backend()  # Use the NIST P-256 elliptic curve
+def generate_rsa_key_pair():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend()
     )
+    return private_key
 
+
+def generate_dsa_key_pair():
+    private_key = dsa.generate_private_key(
+        key_size=2048,
+        backend=default_backend()
+    )
+    return private_key
+
+
+def generate_ecdsa_key_pair():
+    private_key = ec.generate_private_key(
+        ec.SECP256R1(),
+        default_backend()
+    )
+    return private_key
+
+
+def generate_ed25519_key_pair():
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    return private_key
+
+
+def generate_ssh_key_pair(user, key_type="ed25519"):
+    """Generate an SSH key pair based on key_type."""
+
+    # Validate key_type
+    valid_key_types = ["rsa", "dsa", "ecdsa", "ed25519"]
+    if key_type not in valid_key_types:
+        raise ValueError("Invalid key_type. Valid choices are: {}"
+                         .format(", ".join(valid_key_types)))
+
+    # Key generation based on key_type
+    if key_type == "rsa":
+        private_key = generate_rsa_key_pair()
+    elif key_type == "dsa":
+        private_key = generate_dsa_key_pair()
+    elif key_type == "ecdsa":
+        private_key = generate_ecdsa_key_pair()
+    else:  # "ed25519"
+        private_key = generate_ed25519_key_pair()
+
+    # Serialize keys
     private_key_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
@@ -249,6 +294,7 @@ def generate_ssh_key_pair(user):
         format=serialization.PublicFormat.OpenSSH,
     )
 
+    # Add comment to public key
     hostname = socket.gethostname()
     comment = " personal-juju-key-{}-{}".format(user, hostname)
     public_key += comment.encode("utf-8")
