@@ -29,7 +29,7 @@ import subprocess
 import yaml
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, dsa, ec, ed25519
+from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, rsa
 from jinja2 import Environment, FileSystemLoader
 from pkg_resources import packaging
 
@@ -164,8 +164,7 @@ def get_ssh_key(user, key_type="ed25519"):
     """Return the SSH key for a user."""
     # TOFIX: home dir location?
     # TOFIX: make sure the key exists
-    public_key_path = ("/home/{}/.ssh/personal_juju_id_{}.pub"
-                       .format(user, key_type))
+    public_key_path = "/home/{}/.ssh/personal_juju_id_{}.pub".format(user, key_type)
     with open(public_key_path, "r") as f:
         public_key = f.read()
     return public_key
@@ -234,43 +233,39 @@ def save_credentials_file(user, credentials):
 
 
 def generate_rsa_key_pair():
+    """Generate a RSA key pair."""
     private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-        backend=default_backend()
+        public_exponent=65537, key_size=2048, backend=default_backend()
     )
     return private_key
 
 
 def generate_dsa_key_pair():
-    private_key = dsa.generate_private_key(
-        key_size=2048,
-        backend=default_backend()
-    )
+    """Generate a DSA key pair."""
+    private_key = dsa.generate_private_key(key_size=2048, backend=default_backend())
     return private_key
 
 
 def generate_ecdsa_key_pair():
-    private_key = ec.generate_private_key(
-        ec.SECP256R1(),
-        default_backend()
-    )
+    """Generate an ECDSA key pair."""
+    private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
     return private_key
 
 
 def generate_ed25519_key_pair():
+    """Generate an Ed25519 key pair."""
     private_key = ed25519.Ed25519PrivateKey.generate()
     return private_key
 
 
 def generate_ssh_key_pair(user, key_type="ed25519"):
     """Generate an SSH key pair based on key_type."""
-
     # Validate key_type
     valid_key_types = ["rsa", "dsa", "ecdsa", "ed25519"]
     if key_type not in valid_key_types:
-        raise ValueError("Invalid key_type. Valid choices are: {}"
-                         .format(", ".join(valid_key_types)))
+        raise ValueError(
+            "Invalid key_type. Valid choices are: {}".format(", ".join(valid_key_types))
+        )
 
     # Key generation based on key_type
     if key_type == "rsa":
