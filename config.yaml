@@ -43,3 +43,10 @@ options:
       - /home/ubuntu/.kube/:/home/$USER/.kube
     default: ""
     type: string
+  ssh-key-type:
+    description: |
+      The SSH type format that will be used for user personal keys.
+      Values: rsa, dsa, ecdsa, or ed25519
+      Usage of dsa is not recommended unless there exist a practical compatibility rationale.
+    default: "ed25519"
+    type: string
