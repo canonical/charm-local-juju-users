@@ -242,7 +242,7 @@ def generate_rsa_key_pair():
 
 def generate_dsa_key_pair():
     """Generate a DSA key pair."""
-    private_key = dsa.generate_private_key(key_size=2048, backend=default_backend())
+    private_key = dsa.generate_private_key(key_size=4096, backend=default_backend())
     return private_key
 
 
