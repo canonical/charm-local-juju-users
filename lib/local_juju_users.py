@@ -33,6 +33,10 @@ from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, rsa
 from jinja2 import Environment, FileSystemLoader
 from pkg_resources import packaging
 
+ssh_key_juju_prefix = "personal_juju_id"
+ssh_key_juju_comment = "personal-juju-key"
+ssh_key_valid_types = ["rsa", "dsa", "ecdsa", "ed25519"]
+
 
 def set_owner_and_permissions(path, user, group, permissions):
     """Set owner and permissions for a file or directory."""
@@ -93,6 +97,16 @@ def get_users_primary_group(user):
     return output
 
 
+def get_users_home_dir(user):
+    """Return the home directory of a user."""
+    return pwd.getpwnam(user).pw_dir
+
+
+def get_users_ssh_dir(user):
+    """Return the SSH configuration directory of a user."""
+    return os.path.join(get_users_home_dir(user), ".ssh")
+
+
 def create_home_dir_if_missing(user):
     """Create a home directory for a user."""
     home_dir = "/home/{}".format(user)
@@ -121,6 +135,38 @@ def linux_user_exists(user):
         return False
 
 
+def ssh_key_has_comment(public_key_path, comment=ssh_key_juju_comment):
+    """Return True if the provided SSH public key contains the provided comment."""
+    with open(public_key_path, "r") as f:
+        content = f.read()
+        return comment in content
+
+
+def delete_ssh_keys_with_comment(user, skip=[], comment=ssh_key_juju_comment):
+    """Delete all user keys, except those in skip, containing the provided comment."""
+    ssh_dir_path = get_users_ssh_dir(user)
+
+    # Normalize skip paths.
+    skip = [os.path.abspath(item) for item in skip]
+
+    # Traverse the entire SSH directory.
+    for root, _, files in os.walk(ssh_dir_path):
+        for file in files:
+            # Filter for SSH public keys.
+            if file.endswith(".pub") and file not in skip:
+                public_key_path = os.path.join(root, file)
+
+                # Check if the SSH public key contains the specified comment.
+                if ssh_key_has_comment(public_key_path, comment):  # if so,
+                    # Delete the public key.
+                    os.remove(public_key_path)
+
+                    # Delete the corresponding private key
+                    private_key_path = public_key_path.rsplit(".", 1)[0]
+                    if os.path.exists(private_key_path):
+                        os.remove(private_key_path)
+
+
 def setup_juju_data_dir(user):
     """Set up the Juju data directory for a user."""
     juju_dir = "/home/{}/.local/share/juju".format(user)
@@ -137,9 +183,10 @@ def setup_juju_data_dir(user):
 
 def setup_ssh_key(user, key_type="ed25519"):
     """Set up an SSH key for a user."""
-    ssh_dir_path = "/home/{}/.ssh".format(user)
-    private_key_path = "{}/personal_juju_id_{}".format(ssh_dir_path, key_type)
-    public_key_path = "{}/personal_juju_id_{}.pub".format(ssh_dir_path, key_type)
+    ssh_dir_path = get_users_ssh_dir(user)
+    private_key_path = "{}/{}_{}".format(ssh_dir_path, ssh_key_juju_prefix, key_type)
+    public_key_path = "{}/{}_{}.pub".format(ssh_dir_path, ssh_key_juju_prefix, key_type)
+    delete_ssh_keys_with_comment(user, skip=[public_key_path])
 
     keypair_exists = os.path.isfile(private_key_path) and os.path.isfile(public_key_path)
 
@@ -162,22 +209,22 @@ def setup_ssh_key(user, key_type="ed25519"):
 
 def get_ssh_key(user, key_type="ed25519"):
     """Return the SSH key for a user."""
-    # TOFIX: home dir location?
     # TOFIX: make sure the key exists
-    public_key_path = "/home/{}/.ssh/personal_juju_id_{}.pub".format(user, key_type)
+    ssh_dir_path = get_users_ssh_dir(user)
+    public_key_path = "{}/{}_{}.pub".format(ssh_dir_path, ssh_key_juju_prefix, key_type)
     with open(public_key_path, "r") as f:
         public_key = f.read()
     return public_key
 
 
-def setup_ssh_config(user):
+def setup_ssh_config(user, key_type="ed25519"):
     """Set up an SSH config for a user."""
     get_users_primary_group(user)
     renderer = ConfigRenderer("templates")
     renderer.render(
         "ssh_config.j2",
         "/home/{}/.ssh/config".format(user),
-        {},
+        {"ssh_key_juju_prefix": ssh_key_juju_prefix, "key_type": key_type},
         user=user,
         group=get_users_primary_group(user),
     )
@@ -261,10 +308,9 @@ def generate_ed25519_key_pair():
 def generate_ssh_key_pair(user, key_type="ed25519"):
     """Generate an SSH key pair based on key_type."""
     # Validate key_type
-    valid_key_types = ["rsa", "dsa", "ecdsa", "ed25519"]
-    if key_type not in valid_key_types:
+    if key_type not in ssh_key_valid_types:
         raise ValueError(
-            "Invalid key_type. Valid choices are: {}".format(", ".join(valid_key_types))
+            "Invalid key_type. Valid choices are: {}".format(", ".join(ssh_key_valid_types))
         )
 
     # Key generation based on key_type
@@ -291,7 +337,7 @@ def generate_ssh_key_pair(user, key_type="ed25519"):
 
     # Add comment to public key
     hostname = socket.gethostname()
-    comment = " personal-juju-key-{}-{}".format(user, hostname)
+    comment = " {}-{}-{}".format(ssh_key_juju_comment, user, hostname)
     public_key += comment.encode("utf-8")
 
     return private_key_pem.decode("utf-8"), public_key.decode("utf-8")

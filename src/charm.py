@@ -404,8 +404,9 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
                     return
 
             # ensure that ssh key and config exists, create if needed
-            setup_ssh_key(user, key_type=self.model.config["ssh-key-type"])
-            setup_ssh_config(user)
+            key_type = self.model.config["ssh-key-type"]
+            setup_ssh_key(user, key_type)
+            setup_ssh_config(user, key_type)
 
             # only the leader is responsible for setting up access to juju
             if self.unit.is_leader():
