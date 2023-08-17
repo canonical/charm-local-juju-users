@@ -1,9 +1,27 @@
+# Python virtualenv
 venv/
-build/
-*.charm
+.venv/
+
+# Python testing
 .tox/
 .coverage
+
+# Python caches
 __pycache__/
 *.py[cod]
+
+# Python ruff cache 
+.ruff_cache/
+
+# Idea
 .idea
+
+# Charm Builds
+build/
+*.charm
+
+# Visual Studio Code settings
 .vscode/
+
+# Visual Studio Code history plugin
+.history/
