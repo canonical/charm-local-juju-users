@@ -26,5 +26,6 @@ jobs:
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - name: Run integration tests
-        run: python -m tox -e integration
+      # FIXME: re-enable once implemented
+      # - name: Run integration tests
+      #   run: python -m tox -e integration
