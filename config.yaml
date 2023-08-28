@@ -6,8 +6,13 @@ options:
     type: string
   ignored-accounts:
     description: |
-      A comma separated list of Juju accounts that will be ignored by the charm.
+      A comma-separated list of Juju accounts that will be ignored by the charm.
     default: admin
+    type: string
+  ignored-controllers:
+    description: |
+      A comma-separated list of Juju controllers that will be ignored by the charm.
+    default: ""
     type: string
   juju-admin-unix-account:
     description: |
