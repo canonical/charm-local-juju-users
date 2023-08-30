@@ -10,9 +10,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Upload charm to charmhub
-        uses: canonical/charming-actions/upload-charm@2.4.0
-        with:
-          credentials: "${{ secrets.CHARMHUB_TOKEN }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          channel: "latest/edge"
+      - name: Install charmcraft
+        run: snap install charmcraft --classic
+      - name: Install jq
+        run: snap install jq
+      - name: Pack the charm
+        run: charmcraft pack
+      - name: Upload bionic/edge
+        run: charmcraft upload local-juju-users_ubuntu-18.04-amd64.charm --format json | tee upload_bionic.json
+      - name: Release bionic/edge
+        run: charmcraft release local-juju-users --revision $(jq .revision upload_bionic.json) --channel=bionic/edge
+      - name: Upload focal/edge
+        run: charmcraft upload local-juju-users_ubuntu-20.04-amd64.charm --format json | tee upload_focal.json
+      - name: Release focal/edge
+        run: charmcraft release local-juju-users --revision $(jq .revision upload_focal.json) --channel=focal/edge
+      - name: Upload jammy/edge
+        run: charmcraft upload local-juju-users_ubuntu-22.04-amd64.charm --format json | tee upload_jammy.json
+      - name: Release jammy/edge
+        run: charmcraft release local-juju-users --revision $(jq .revision upload_jammy.json) --channel=jammy/edge
+      - name: Release latest/edge
+        run: charmcraft release local-juju-users --revision $(jq .revision upload_jammy.json) --channel=latest/edge
