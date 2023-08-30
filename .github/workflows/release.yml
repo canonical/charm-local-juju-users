@@ -16,6 +16,8 @@ jobs:
         run: sudo snap install jq
       - name: Pack the charm
         run: sudo charmcraft pack
+      - name: Init LXD
+        run: sudo lxd init --auto
       - name: Upload bionic/edge
         run: charmcraft upload local-juju-users_ubuntu-18.04-amd64.charm --format json | tee upload_bionic.json
       - name: Release bionic/edge
