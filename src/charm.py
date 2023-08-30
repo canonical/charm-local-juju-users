@@ -286,6 +286,19 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
 
         return default_controller, default_model
 
+    def _get_ignored_controllers(self):
+        """Return the user-specified ignored controllers list."""
+        if (
+            self.model.config["ignored_controllers"]
+            and len(self.model.config["ignored_controllers"].strip()) > 0
+        ):
+            return [
+                controller.strip()
+                for controller in self.model.config["ignored.controllers"].split(",")
+            ]
+
+        return []
+
     def _disable_accounts(self):
         """Disable accounts that are no longer needed."""
         ignored_accounts = self.config["ignored-accounts"]
@@ -363,6 +376,7 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
     def _synchronize_accounts(self, event: ops.charm.ActionEvent):
         source_unix_group = self.model.config["source-unix-group"]
         self.model.config["ignored-accounts"]
+        ignored_controllers = self._get_ignored_controllers()
         default_model = self.model.config["default-juju-model"]  # FIXME: ensure this model exists
 
         # sync the local user list and other details with other peers
@@ -448,23 +462,24 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
 
             # register local ssh keys and render bashrc and model.* files on all units
             for controller in self.juju_client.controllers:
-                controller_models = self.juju_client.models(controller)
-                for model in controller_models:
-                    # registering ssh keys is supported only in non-container models
-                    if model["model-type"] != "caas":
-                        self.juju_client.register_ssh_key(controller, model["name"], user)
+                if controller not in ignored_controllers:
+                    controller_models = self.juju_client.models(controller)
+                    for model in controller_models:
+                        # registering ssh keys is supported only in non-container models
+                        if model["model-type"] != "caas":
+                            self.juju_client.register_ssh_key(controller, model["name"], user)
 
-                    self.renderer.render(
-                        "model.j2",
-                        self._generate_model_filename(controller, model["name"], user),
-                        {
-                            "controller": controller,
-                            "model": model["name"],
-                        },
-                        user=user,
-                        group=get_users_primary_group(user),
-                        permissions=0o644,
-                    )
+                        self.renderer.render(
+                            "model.j2",
+                            self._generate_model_filename(controller, model["name"], user),
+                            {
+                                "controller": controller,
+                                "model": model["name"],
+                            },
+                            user=user,
+                            group=get_users_primary_group(user),
+                            permissions=0o644,
+                        )
 
             # customize bash prompt
             sitename = self.model.config["site-name"]

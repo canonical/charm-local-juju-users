@@ -24,7 +24,8 @@ Available configuration options:
 | Name | Description | Examples | Default |
 |---|---|---|---|
 | `source-unix-group` | The UNIX group that will be used to source the list of users to be added to the juju model. | `sre-squad` | `ubuntu` |
-| `ignored-accounts` | A comma separated list of Juju accounts that will be ignored by the charm. | `admin,prometheus-juju-exporter` | `admin` |
+| `ignored-accounts` | A comma-separated list of Juju accounts that will be ignored by the charm. | `admin,prometheus-juju-exporter` | `admin` |
+| `ignored-controllers` | A comma-separated list of Juju controllers that will be ignored by the charm. | `maas-site1,maas-site2` | `""` |
 | `juju-admin-unix-account` | The UNIX account that will be used to add users to the juju model. | `ubuntu` | `ubuntu` |
 | `sync-schedule` | User account sync schedule in cron format. | `"10,25,40,55 * * * *"` `"@daily"` `"@hourly"` | `"@daily"` |
 | `site-name` | This is the name that will be used to identify the remote site in the bash prompt. It can be useful to set this to the name of the cloud or datacenter location. | `Example-West-1` | `Juju` |
