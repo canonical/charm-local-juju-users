@@ -11,9 +11,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install charmcraft
-        run: snap install charmcraft --classic
+        run: sudo snap install charmcraft --classic
       - name: Install jq
-        run: snap install jq
+        run: sudo snap install jq
       - name: Pack the charm
         run: charmcraft pack
       - name: Upload bionic/edge
