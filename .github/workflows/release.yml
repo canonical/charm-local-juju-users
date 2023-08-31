@@ -16,17 +16,18 @@ jobs:
           credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
           github-token: "${{ secrets.GITHUB_TOKEN }}"
           channel: latest/edge
-      - name: Upload charm to focal/edge on charmhub
-        uses: canonical/charming-actions/upload-charm@2.2.0
-        with:
-          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          built-charm-path: local-juju-users_ubuntu-20.04-amd64.charm
-          channel: focal/edge
-      - name: Upload charm to bionic/edge on charmhub
-        uses: canonical/charming-actions/upload-charm@2.2.0
-        with:
-          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          built-charm-path: local-juju-users_ubuntu-18.04-amd64.charm
-          channel: bionic/edge
+      # TODO: fix non-existent tracks on charmhub
+      #- name: Upload charm to focal/edge on charmhub
+      #  uses: canonical/charming-actions/upload-charm@2.2.0
+      #  with:
+      #    credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
+      #    github-token: "${{ secrets.GITHUB_TOKEN }}"
+      #    built-charm-path: local-juju-users_ubuntu-20.04-amd64.charm
+      #    channel: focal/edge
+      #- name: Upload charm to bionic/edge on charmhub
+      #  uses: canonical/charming-actions/upload-charm@2.2.0
+      #  with:
+      #    credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
+      #    github-token: "${{ secrets.GITHUB_TOKEN }}"
+      #    built-charm-path: local-juju-users_ubuntu-18.04-amd64.charm
+      #    channel: bionic/edge
