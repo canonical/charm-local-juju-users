@@ -6,7 +6,7 @@ on:
 jobs:
   release:
     name: Release to edge
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -14,21 +14,30 @@ jobs:
         run: sudo snap install charmcraft --classic
       - name: Install jq
         run: sudo snap install jq
-      - name: Init LXD
-        run: sudo lxd init --auto
+      - name: Install LXD
+        run: |
+          sudo snap install lxd --channel=latest/stable
+          sudo snap refresh lxd
+          sudo groupadd --force --system lxd
+          sudo usermod --append --groups lxd $USER
+          newgrp lxd
+          sudo snap start lxd
+          sudo lxd waitready --timeout=30
+          sudo lxd init --auto          
       - name: Pack the charm
-        run: sudo charmcraft pack
-      - name: Upload bionic/edge
-        run: charmcraft upload local-juju-users_ubuntu-18.04-amd64.charm --format json | tee upload_bionic.json
-      - name: Release bionic/edge
-        run: charmcraft release local-juju-users --revision $(jq .revision upload_bionic.json) --channel=bionic/edge
-      - name: Upload focal/edge
-        run: charmcraft upload local-juju-users_ubuntu-20.04-amd64.charm --format json | tee upload_focal.json
-      - name: Release focal/edge
-        run: charmcraft release local-juju-users --revision $(jq .revision upload_focal.json) --channel=focal/edge
-      - name: Upload jammy/edge
-        run: charmcraft upload local-juju-users_ubuntu-22.04-amd64.charm --format json | tee upload_jammy.json
-      - name: Release jammy/edge
-        run: charmcraft release local-juju-users --revision $(jq .revision upload_jammy.json) --channel=jammy/edge
-      - name: Release latest/edge
-        run: charmcraft release local-juju-users --revision $(jq .revision upload_jammy.json) --channel=latest/edge
+        run: |
+          sudo charmcraft pack
+          file *.charm
+      - name: Upload and release
+        env:
+          CHARMCRAFT_AUTH: ${{ secrets.CHARMCRAFT_AUTH }}
+        run: |
+          charmcraft upload local-juju-users_ubuntu-18.04-amd64.charm --format json | tee upload_bionic.json
+          charmcraft release local-juju-users --revision $(jq .revision upload_bionic.json) --channel=bionic/edge
+          charmcraft release local-juju-users --revision $(jq .revision upload_bionic.json) --channel=latest/edge
+          charmcraft upload local-juju-users_ubuntu-20.04-amd64.charm --format json | tee upload_focal.json
+          charmcraft release local-juju-users --revision $(jq .revision upload_focal.json) --channel=focal/edge
+          charmcraft release local-juju-users --revision $(jq .revision upload_focal.json) --channel=latest/edge
+          charmcraft upload local-juju-users_ubuntu-22.04-amd64.charm --format json | tee upload_jammy.json
+          charmcraft release local-juju-users --revision $(jq .revision upload_jammy.json) --channel=jammy/edge
+          charmcraft release local-juju-users --revision $(jq .revision upload_jammy.json) --channel=latest/edge
