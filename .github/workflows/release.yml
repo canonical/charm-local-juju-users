@@ -10,12 +10,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Select charmhub channel
-        uses: canonical/charming-actions/channel@2.2.0
-        id: edge
       - name: Upload charm to charmhub
         uses: canonical/charming-actions/upload-charm@2.2.0
         with:
           credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-          channel: "${{ steps.channel.outputs.name }}"
+          channel: latest/edge
