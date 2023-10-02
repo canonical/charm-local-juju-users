@@ -289,12 +289,12 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
     def _get_ignored_controllers(self):
         """Return the user-specified ignored controllers list."""
         if (
-            self.model.config["ignored_controllers"]
-            and len(self.model.config["ignored_controllers"].strip()) > 0
+            self.model.config["ignored-controllers"]
+            and len(self.model.config["ignored-controllers"].strip()) > 0
         ):
             return [
                 controller.strip()
-                for controller in self.model.config["ignored.controllers"].split(",")
+                for controller in self.model.config["ignored-controllers"].split(",")
             ]
 
         return []
