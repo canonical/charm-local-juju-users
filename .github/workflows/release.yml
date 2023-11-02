@@ -23,13 +23,6 @@ jobs:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
           built-charm-path: local-juju-users_ubuntu-18.04-amd64.charm
           channel: latest/edge
-      - name: Release bionic version of the charm to latest/edge
-        uses: canonical/charming-actions/release-charm@2.2.0
-        with:
-          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          destination-channel: latest/edge
-          base-name: "18.04"
       - name: Upload focal version of the charm to latest/edge on charmhub
         uses: canonical/charming-actions/upload-charm@2.2.0
         with:
