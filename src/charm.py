@@ -77,7 +77,9 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
         self.juju_client = JujuClient(self.model.config["juju-admin-unix-account"])
 
         controllers = self.juju_client.controllers
-        self.controllers = {k: controllers[k] for k in controllers if k not in self._get_ignored_controllers()}
+        self.controllers = {
+            k: controllers[k] for k in controllers if k not in self._get_ignored_controllers()
+        }
 
     def _on_install(self, _):
         """Install the required packages."""
