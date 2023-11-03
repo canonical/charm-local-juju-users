@@ -379,7 +379,6 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
     def _synchronize_accounts(self, event: ops.charm.ActionEvent):
         source_unix_group = self.model.config["source-unix-group"]
         self.model.config["ignored-accounts"]
-        ignored_controllers = self._get_ignored_controllers()
         default_model = self.model.config["default-juju-model"]  # FIXME: ensure this model exists
 
         # sync the local user list and other details with other peers
