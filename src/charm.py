@@ -318,9 +318,10 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
                     log.info("Disabling user {}".format(user["user-name"]))
                     controller_models = self.juju_client.models(controller)
                     for model in controller_models:
-                        self.juju_client.remove_ssh_keys(
-                            controller, model["name"], user["user-name"]
-                        )
+                        if model["model-type"] != "caas":
+                            self.juju_client.remove_ssh_keys(
+                                controller, model["name"], user["user-name"]
+                            )
                         if self.juju_client.is_user_model_admin(
                             controller, model["name"], user["user-name"]
                         ):
