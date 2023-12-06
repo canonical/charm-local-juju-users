@@ -76,6 +76,11 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
         # FIXME: validate this user account
         self.juju_client = JujuClient(self.model.config["juju-admin-unix-account"])
 
+        controllers = self.juju_client.controllers
+        self.controllers = {
+            k: controllers[k] for k in controllers if k not in self._get_ignored_controllers()
+        }
+
     def _on_install(self, _):
         """Install the required packages."""
         os.environ["DEBIAN_FRONTEND"] = "noninteractive"
@@ -278,8 +283,8 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
             default_controller, default_model = parse_controller_model(
                 self.config["default-juju-model"]
             )
-        elif self.juju_client.controllers:
-            default_controller = list(self.juju_client.controllers.keys())[0]
+        elif self.controllers:
+            default_controller = list(self.controllers.keys())[0]
             default_model = self.juju_client.models(default_controller)[0]["name"]
         else:
             default_controller, default_model = None, None
@@ -304,7 +309,7 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
         ignored_accounts = self.config["ignored-accounts"]
         current_linux_users = get_linux_group_users(self.config["source-unix-group"])
 
-        for controller in self.juju_client.controllers:
+        for controller in self.controllers:
             for user in self.juju_client.controller_users(controller):
                 if (
                     user["user-name"] not in current_linux_users
@@ -325,7 +330,7 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
                     self.juju_client.disable_user(controller, user["user-name"])
 
     def _setup_juju_user_access(self, user, password):
-        for controller in self.juju_client.controllers:
+        for controller in self.controllers:
             controller_models = self.juju_client.models(controller)
             # set up access
             if self.juju_client.user_exists(controller, user):
@@ -346,7 +351,7 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
             self.juju_client.set_password(controller, user, password)
 
     def _generate_model_filename(self, controller, model, user):
-        if len(self.juju_client.controllers) > 1:
+        if len(self.controllers) > 1:
             model_filename = "/home/{}/model.{}-{}".format(user, controller, model.split("/")[-1])
         else:
             model_filename = "/home/{}/model.{}".format(user, model.split("/")[-1])
@@ -376,7 +381,6 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
     def _synchronize_accounts(self, event: ops.charm.ActionEvent):
         source_unix_group = self.model.config["source-unix-group"]
         self.model.config["ignored-accounts"]
-        ignored_controllers = self._get_ignored_controllers()
         default_model = self.model.config["default-juju-model"]  # FIXME: ensure this model exists
 
         # sync the local user list and other details with other peers
@@ -434,7 +438,7 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
                 {
                     "user": user,
                     "password": password,
-                    "controllers": self.juju_client.controllers,
+                    "controllers": self.controllers,
                 },
                 user=user,
                 group=get_users_primary_group(user),
@@ -445,7 +449,7 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
                 "controllers.yaml.j2",
                 "/home/{}/.local/share/juju/controllers.yaml".format(user),
                 {
-                    "controllers": self.juju_client.controllers,
+                    "controllers": self.controllers,
                     "current_controller": default_controller,
                 },
                 user=user,
@@ -461,25 +465,24 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
             save_clouds_file(user, clouds)
 
             # register local ssh keys and render bashrc and model.* files on all units
-            for controller in self.juju_client.controllers:
-                if controller not in ignored_controllers:
-                    controller_models = self.juju_client.models(controller)
-                    for model in controller_models:
-                        # registering ssh keys is supported only in non-container models
-                        if model["model-type"] != "caas":
-                            self.juju_client.register_ssh_key(controller, model["name"], user)
+            for controller in self.controllers:
+                controller_models = self.juju_client.models(controller)
+                for model in controller_models:
+                    # registering ssh keys is supported only in non-container models
+                    if model["model-type"] != "caas":
+                        self.juju_client.register_ssh_key(controller, model["name"], user)
 
-                        self.renderer.render(
-                            "model.j2",
-                            self._generate_model_filename(controller, model["name"], user),
-                            {
-                                "controller": controller,
-                                "model": model["name"],
-                            },
-                            user=user,
-                            group=get_users_primary_group(user),
-                            permissions=0o644,
-                        )
+                    self.renderer.render(
+                        "model.j2",
+                        self._generate_model_filename(controller, model["name"], user),
+                        {
+                            "controller": controller,
+                            "model": model["name"],
+                        },
+                        user=user,
+                        group=get_users_primary_group(user),
+                        permissions=0o644,
+                    )
 
             # customize bash prompt
             sitename = self.model.config["site-name"]
