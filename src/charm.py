@@ -166,7 +166,9 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
         """Set up cron job to synchronize accounts."""
         cron_schedule = self.model.config["sync-schedule"]
 
-        juju_run_action_args = ["-m", self.model.name, self.unit.name, "synchronize-accounts"]
+        whoami = self.juju_client.whoami()
+        model_str = f"{whoami['controller']}:{whoami['user']}/{self.model.name}"
+        juju_run_action_args = ["-m", model_str, self.unit.name, "synchronize-accounts"]
         if self.juju_client.juju_cli_version < packaging.version.parse("3.0.0"):
             juju_cmd = JUJU_2_RUN_ACTION_CMD + juju_run_action_args
         else:
