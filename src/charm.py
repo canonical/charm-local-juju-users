@@ -381,6 +381,41 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
             except Exception as e:
                 log.warning("Skipping files sync {}. Failed to sync: {}".format(path, e))
 
+    def _synchronize_user_home(self, user):
+        """Try running `whoami` as the user, back out if it fails. Create the user's home directory if it does not exist."""
+        try:
+            su(user)
+            create_home_dir_if_missing(user)
+            return True
+        except Exception as e:
+            log.error("Failed to switch to user {}: {}".format(user, e))
+            self.unit.status = ops.model.BlockedStatus(
+                "Couldn't switch to user {} on the system".format(user)
+            )
+            return False
+
+    def _synchronize_user_password(self, user):
+        """Retrieve user's password from the relation data or set a new one."""
+        password = self._retrieve_password(user)
+
+        if not password:
+            if self.unit.is_leader():
+                password = generate_random_password()
+                self._store_password(user, password)
+            else:
+                self.unit.status = ops.model.BlockedStatus(
+                    "Password of Juju user {} not yet configured by the leader".format(user)
+                )
+                return False
+
+        return password
+
+    def _synchronize_user_ssh(self, user):
+        """Ensure that ssh key and config exists, create if needed."""
+        key_type = self.model.config["ssh-key-type"]
+        setup_ssh_key(user, key_type)
+        setup_ssh_config(user, key_type)
+
     def _synchronize_accounts(self, event: ops.charm.ActionEvent):
         source_unix_group = self.model.config["source-unix-group"]
         self.model.config["ignored-accounts"]
@@ -400,33 +435,14 @@ class LocalJujuUsersCharm(ops.charm.CharmBase):
         # obtain the list of local users
         current_linux_users = get_linux_group_users(source_unix_group)
         for user in current_linux_users:
-            # try running `whoami` as the user, back out if it fails
-            # side effect is that the home dir will be created if it doesn't exist
-            try:
-                su(user)
-                create_home_dir_if_missing(user)
-            except Exception as e:
-                log.error("Failed to switch to user {}: {}".format(user, e))
-                self.unit.status = ops.model.BlockedStatus(
-                    "Couldn't switch to user {} on the system".format(user)
-                )
+            if not self._synchronize_user_home(user):
                 return
 
-            # retrieve user's password from the relation data or set a new one
-            password = self._retrieve_password(user)
+            password = self._synchronize_user_password(user)
             if not password:
-                if self.unit.is_leader():
-                    password = generate_random_password()
-                    self._store_password(user, password)
-                else:
-                    self.unit.status = ops.model.BlockedStatus(
-                        "Password of Juju user {} not yet configured by the leader".format(user)
-                    )
-                    return
+                return
 
-            # ensure that ssh key and config exists, create if needed
-            setup_ssh_key(user)
-            setup_ssh_config(user)
+            self._synchronize_user_ssh(user)
 
             # only the leader is responsible for setting up access to juju
             if self.unit.is_leader():
